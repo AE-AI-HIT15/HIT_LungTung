@@ -5,7 +5,9 @@ import io
 from functools import cached_property
 
 import torch
+from deep_translator import GoogleTranslator
 from diffusers import StableDiffusionXLPipeline
+from langdetect import detect
 
 from shared.base import BaseModel
 from shared.logging import get_logger
@@ -36,6 +38,24 @@ class Text2ImageService(BaseModel):
             pipe.load_lora_weights(self.settings.t2i.lora_weights)
         return pipe
 
+    def check_and_translate_prompt(self, prompt: str) -> str:
+        """ Check the language of the prompt and translate it if necessary.
+
+        Args:
+            prompt (str): The input text prompt to be checked and potentially translated.
+
+        Returns:
+            str: The original prompt if it's in English, or the translated prompt if it's in Vietnamese.
+        """
+        lang = detect(prompt)
+        if lang == 'vi':
+            translated = GoogleTranslator(
+                source='vi', target='en',
+            ).translate(prompt)
+            return translated
+        else:
+            return prompt
+
     def process(self, inputs: Text2ImageInput) -> Text2ImageOutput:
         """ Process the text-to-image generation request.
 
@@ -47,7 +67,8 @@ class Text2ImageService(BaseModel):
         """
         logger.info(f'Processing T2I request with prompt: {inputs.prompt}')
         pipe = self.model_loaded
-        image = pipe(prompt=inputs.prompt).images[0]
+        prompt = self.check_and_translate_prompt(inputs.prompt)
+        image = pipe(prompt=prompt).images[0]
         buffered = io.BytesIO()
         image.save(buffered, format='PNG')
         image_base64 = base64.b64encode(buffered.getvalue()).decode('utf-8')
