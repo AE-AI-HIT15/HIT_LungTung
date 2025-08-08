@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Text-to-Image Chat Interface</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    .animate-pulse {
+      animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    .chat-container {
+      height: calc(100vh - 200px);
+    }
+    .message-enter {
+      animation: fadeIn 0.3s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body class="bg-gray-50">
+  <div class="container mx-auto max-w-4xl p-4">
+    <header class="mb-6">
+      <h1 class="text-3xl font-bold text-center text-indigo-700">ImageGen AI</h1>
+      <p class="text-center text-gray-500">Describe your image and I'll generate it for you</p>
+    </header>
+
+    <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+      <div class="chat-container p-6 overflow-y-auto" id="chatHistory">
+        <div class="message-enter mb-4 flex justify-start">
+          <div class="bg-indigo-100 rounded-2xl rounded-tl-none px-5 py-3 max-w-xs md:max-w-lg">
+            <p class="font-medium">Hi! I'm ImageGen AI. Describe what image you'd like me to create, and I'll generate it for you.</p>
+            <p class="text-sm text-gray-500 mt-1">Try something like: "A futuristic city at night with neon lights"</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="border-t border-gray-200 p-4 bg-gray-50">
+        <div class="flex">
+          <input
+            type="text"
+            id="messageInput"
+            placeholder="Describe the image you want to generate..."
+            class="flex-1 rounded-l-lg border border-r-0 border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          >
+          <button
+            id="sendButton"
+            class="bg-indigo-600 hover:bg-indigo-700 text-white rounded-r-lg px-6 py-3 font-medium transition duration-200 flex items-center justify-center"
+          >
+            <span>Generate</span>
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 1.414L10.586 9H7a1 1 0 100 2h3.586l-1.293 1.293a1 1 0 101.414 1.414l3-3a1 1 0 000-1.414z" clip-rule="evenodd" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-4 text-center text-sm text-gray-500">
+      <p>Generated images will appear in the chat above. Start with a simple description!</p>
+    </div>
+  </div>
+
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const chatHistory = document.getElementById('chatHistory');
+    const messageInput = document.getElementById('messageInput');
+    const sendButton = document.getElementById('sendButton');
+
+    const scrollToBottom = () => {
+      chatHistory.scrollTop = chatHistory.scrollHeight;
+    };
+
+    const addUserMessage = msg => {
+      const div = document.createElement('div');
+      div.className = 'message-enter mb-4 flex justify-end';
+      div.innerHTML = `<div class="bg-indigo-600 text-white rounded-2xl rounded-tr-none px-5 py-3 max-w-xs md:max-w-lg"><p>${msg}</p></div>`;
+      chatHistory.appendChild(div);
+      scrollToBottom();
+    };
+
+    const addAIResponseText = txt => {
+      const div = document.createElement('div');
+      div.className = 'message-enter mb-4 flex justify-start';
+      div.innerHTML = `<div class="bg-indigo-100 rounded-2xl rounded-tl-none px-5 py-3 max-w-xs md:max-w-lg"><p>${txt}</p></div>`;
+      chatHistory.appendChild(div);
+      scrollToBottom();
+    };
+
+    const addAIImageResponse = (b64, prompt) => {
+      const div = document.createElement('div');
+      div.className = 'message-enter mb-4 flex justify-start';
+      div.innerHTML = `
+        <div class="bg-indigo-100 rounded-2xl rounded-tl-none p-3 max-w-xs md:max-w-lg">
+          <div class="mb-2 text-gray-700">Here's your generated image:</div>
+          <div class="rounded-lg overflow-hidden">
+            <img src="data:image/png;base64,${b64}" alt="${prompt}" class="w-full h-auto rounded-lg"/>
+          </div>
+          <div class="mt-2 text-sm text-gray-500"><p>Prompt: "${prompt}"</p></div>
+        </div>`;
+      chatHistory.appendChild(div);
+      scrollToBottom();
+    };
+
+    const addLoadingIndicator = () => {
+      const div = document.createElement('div');
+      div.className = 'mb-4 flex justify-start';
+      div.innerHTML = `
+        <div class="bg-indigo-100 rounded-2xl rounded-tl-none px-5 py-3 max-w-xs md:max-w-lg animate-pulse">
+          <div class="flex items-center space-x-1">
+            <div class="w-2 h-2 bg-indigo-400 rounded-full"></div>
+            <div class="w-2 h-2 bg-indigo-400 rounded-full"></div>
+            <div class="w-2 h-2 bg-indigo-400 rounded-full"></div>
+          </div>
+        </div>`;
+      chatHistory.appendChild(div);
+      scrollToBottom();
+      return div;
+    };
+
+    sendButton.addEventListener('click', () => {
+      const prompt = messageInput.value.trim();
+      if (!prompt) return;
+
+      addUserMessage(prompt);
+      const loader = addLoadingIndicator();
+      messageInput.value = '';
+
+      fetch('http://localhost:8000/v1/Text2Image', {
+        method: 'POST',
+        mode: 'cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt })
+      })
+      .then(res => {
+        if (!res.ok) throw new Error(`Status ${res.status}`);
+        return res.json();
+      })
+      .then(data => {
+        console.log('Response:', data);
+        chatHistory.removeChild(loader);
+
+        // ✅ ĐÃ SỬA ĐÚNG Ở ĐÂY
+        if (data.info?.image_base64) {
+          addAIImageResponse(data.info.image_base64, prompt);
+        } else {
+          addAIResponseText('❌ No image received.');
+        }
+      })
+      .catch(err => {
+        chatHistory.removeChild(loader);
+        addAIResponseText('❌ Error: ' + err.message);
+      });
+    });
+
+    messageInput.addEventListener('keypress', e => {
+      if (e.key === 'Enter') sendButton.click();
+    });
+  });
+  </script>
+</body>
+</html>

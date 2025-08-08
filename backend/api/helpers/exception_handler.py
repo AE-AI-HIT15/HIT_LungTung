@@ -5,7 +5,6 @@ from typing import Optional
 
 from fastapi import status
 from fastapi.responses import JSONResponse
-from shared.base import BaseModel
 from structlog.stdlib import BoundLogger
 
 
@@ -17,9 +16,10 @@ class ResponseMessage(str, Enum):
     UNPROCESSABLE_ENTITY = 'Input is not allowed !!!'
 
 
-class ExceptionHandler(BaseModel):
-    logger: BoundLogger
-    service_name: str
+class ExceptionHandler():
+    def __init__(self, logger: BoundLogger, service_name: str):
+        self.logger = logger
+        self.service_name = service_name
 
     def _create_message(self, e: str) -> str:
         return f'[{self.service_name}] error: {e}'
