@@ -8,7 +8,10 @@ import torch
 from diffusers import StableDiffusionXLPipeline
 
 from shared.base import BaseModel
+from shared.logging import get_logger
 from shared.settings import Settings
+
+logger = get_logger(__name__)
 
 
 class Text2ImageInput(BaseModel):
@@ -42,8 +45,8 @@ class Text2ImageService(BaseModel):
         Returns:
             Text2ImageOutput: The output containing the generated image in base64 format.
         """
-
-        pipe = self.model_loaded()
+        logger.info(f'Processing T2I request with prompt: {inputs.prompt}')
+        pipe = self.model_loaded
         image = pipe(prompt=inputs.prompt).images[0]
         buffered = io.BytesIO()
         image.save(buffered, format='PNG')

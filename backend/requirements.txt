@@ -1,0 +1,13 @@
+accelerate
+diffusers
+dotenv
+fastapi
+numpy
+pydantic
+pydantic-settings
+pydantic_core
+python-dotenv
+safetensors
+torch
+transformers
+uvicorn

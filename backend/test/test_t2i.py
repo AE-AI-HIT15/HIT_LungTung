@@ -1,7 +1,16 @@
+from __future__ import annotations
+
+import gc
 import unittest
-from infra.load_model import Text2ImageInput
-from infra.load_model import Text2ImageService
+
+import torch
+
+from infra.load_model.load_model import Text2ImageInput
+from infra.load_model.load_model import Text2ImageService
 from shared.settings import Settings
+gc.collect()
+torch.cuda.empty_cache()
+
 
 class TestText2Image(unittest.TestCase):
 
@@ -11,9 +20,12 @@ class TestText2Image(unittest.TestCase):
 
     def test_t2i_service(self):
         result = self.t2i.process(
-            inputs=Text2ImageInput(prompt="A beautiful sunset over the mountains")
+            inputs=Text2ImageInput(
+                prompt='A beautiful sunset over the mountains',
+            ),
         )
         print(result)
-        
+
+
 if __name__ == '__main__':
     unittest.main()
