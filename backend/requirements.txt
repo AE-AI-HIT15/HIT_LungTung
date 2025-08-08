@@ -1,13 +1,16 @@
 accelerate
+deep_translator
 diffusers
 dotenv
 fastapi
+langdetect
 numpy
 pydantic
 pydantic-settings
 pydantic_core
 python-dotenv
 safetensors
+structlog
 torch
 transformers
 uvicorn
