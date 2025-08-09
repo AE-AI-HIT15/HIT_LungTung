@@ -2,4 +2,4 @@ __pycache__
 weights/
 .vscode/
 .env
-*.npy
+*.npy".history/"
