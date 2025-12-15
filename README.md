@@ -13,6 +13,112 @@ This project implements a full-stack application featuring:
 - GPU acceleration for fast image synthesis using Stable Diffusion XL
 - Docker for containerization and easy deployment
 
+## 🏛️ System Architecture
+
+```mermaid
+graph TB
+    subgraph "User Layer"
+        User["👤 User"]
+        Browser["🌐 Web Browser<br/>(Port 8080)"]
+    end
+
+    subgraph "Frontend Layer"
+        UI["📱 Interactive UI<br/>(index.html)"]
+        JS["⚡ JavaScript Client<br/>- Event Handling<br/>- API Communication<br/>- Dynamic Rendering"]
+    end
+
+    subgraph "Backend Layer - FastAPI Application"
+        API["🔌 REST API Gateway<br/>(Port 8000)<br/>main.py"]
+        Router["🔀 Text2Image Router<br/>/v1/Text2Image<br/>api/routers/text2image.py"]
+        Handler["⚙️ Exception Handler<br/>api/helpers/exception_handler.py"]
+    end
+
+    subgraph "Application Layer"
+        LangDetect["🌍 Language Detector<br/>langdetect"]
+        Translator["🔤 Vietnamese → English<br/>GoogleTranslator<br/>deep_translator"]
+        T2IService["🎨 Text2Image Service<br/>infra/load_model/load_model.py"]
+    end
+
+    subgraph "Model Layer - GPU Accelerated"
+        SDXL["🤖 Stable Diffusion XL Pipeline<br/>StableDiffusionXLPipeline"]
+        LoRA["✨ LoRA Weights<br/>(Optional Fine-tuning)<br/>backend/shared/weights"]
+        GPU["🚀 CUDA GPU<br/>FP16 Precision<br/>torch.float16"]
+    end
+
+    subgraph "Infrastructure Layer"
+        Settings["⚙️ Configuration<br/>shared/settings/<br/>.env"]
+        Logger["📝 Logging System<br/>shared/logging/"]
+        BaseModels["📦 Base Models<br/>shared/base/"]
+    end
+
+    subgraph "Output Layer"
+        ImageGen["🖼️ Generated Image<br/>(PIL Image)"]
+        Base64["🔐 Base64 Encoder<br/>PNG Format"]
+        Response["📤 JSON Response<br/>{image_base64: '...'}"]
+    end
+
+    %% User Flow
+    User -->|"1. Enters Prompt"| Browser
+    Browser -->|"2. HTTP Request"| UI
+    UI <-->|"3. Events & DOM"| JS
+    
+    %% API Communication
+    JS -->|"4. POST /v1/Text2Image<br/>JSON: {prompt: '...'}"| API
+    API -->|"5. Route Request"| Router
+    Router -->|"6. Validate Input"| Handler
+    
+    %% Processing Flow
+    Router -->|"7. Process Request"| T2IService
+    T2IService -->|"8. Detect Language"| LangDetect
+    LangDetect -->|"9. Vietnamese?"| Translator
+    Translator -->|"10. Translated Prompt"| T2IService
+    
+    %% Model Inference
+    T2IService -->|"11. Load Pipeline<br/>(cached_property)"| SDXL
+    Settings -.->|"Model Config"| SDXL
+    LoRA -.->|"Fine-tune Weights"| SDXL
+    SDXL -->|"12. Run on"| GPU
+    GPU -->|"13. Inference Result"| ImageGen
+    
+    %% Response Flow
+    ImageGen -->|"14. Encode"| Base64
+    Base64 -->|"15. Create Output"| Response
+    Response -->|"16. JSON Response"| Router
+    Router -->|"17. HTTP 200 OK"| JS
+    JS -->|"18. Display Image"| UI
+    UI -->|"19. Visual Output"| Browser
+    Browser -->|"20. View Image"| User
+    
+    %% Infrastructure Support
+    Logger -.->|"Monitor"| Router
+    Logger -.->|"Monitor"| T2IService
+    BaseModels -.->|"Base Classes"| T2IService
+    
+    style User fill:#e1f5ff,stroke:#01579b,stroke-width:3px
+    style Browser fill:#fff3e0,stroke:#e65100,stroke-width:2px
+    style UI fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
+    style API fill:#e8f5e9,stroke:#1b5e20,stroke-width:3px
+    style SDXL fill:#fff9c4,stroke:#f57f17,stroke-width:3px
+    style GPU fill:#ffebee,stroke:#b71c1c,stroke-width:3px
+    style ImageGen fill:#e0f2f1,stroke:#004d40,stroke-width:2px
+    style Translator fill:#fce4ec,stroke:#880e4f,stroke-width:2px
+```
+
+### 🔄 Data Flow Summary
+
+1. **User Input**: User enters a text prompt (Vietnamese or English) in the web interface
+2. **Frontend Processing**: JavaScript captures and sends the prompt via POST request
+3. **API Gateway**: FastAPI receives and routes the request to Text2Image endpoint
+4. **Language Processing**: 
+   - Detects if prompt is in Vietnamese
+   - Translates to English if needed (improves generation quality)
+5. **Model Inference**: 
+   - Loads cached Stable Diffusion XL pipeline with LoRA weights
+   - Runs inference on GPU with FP16 precision
+6. **Image Encoding**: Converts PIL image to base64-encoded PNG
+7. **Response Delivery**: Returns JSON with base64 image to frontend
+8. **Display**: JavaScript decodes and displays the generated image
+
 ## ⚙️ Components
 
 ### Backend
