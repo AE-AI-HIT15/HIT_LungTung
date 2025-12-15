@@ -1,4 +1,4 @@
-# HIT_LungTung
+
 HIT Product 2025
 # GenImageAI
 A system that generates high-quality images from natural language text prompts
