@@ -119,6 +119,68 @@ graph TB
 7. **Response Delivery**: Returns JSON with base64 image to frontend
 8. **Display**: JavaScript decodes and displays the generated image
 
+## 🎓 Training Architecture
+
+The project includes an SDXL LoRA training script ([`train_text_to_image_lora_sdxl.py`](file:///e:/HIT_LungTung-1/train_text_to_image_lora_sdxl.py)) for fine-tuning custom models:
+
+```mermaid
+graph TB
+    subgraph "Input"
+        Dataset["📊 Dataset<br/>Images + Captions<br/>metadata.jsonl"]
+        Config["⚙️ Config<br/>Hyperparameters<br/>Model Paths"]
+    end
+
+    subgraph "Model Initialization"
+        BaseModel["🤖 SDXL Base Model<br/>UNet + VAE + Text Encoders"]
+        LoRA["✨ LoRA Adapters<br/>Rank 4-8<br/>Attention Layers Only"]
+    end
+
+    subgraph "Training Pipeline"
+        DataPrep["🖼️ Data Preparation<br/>Resize to 1024x1024<br/>Dual Tokenization"]
+        TrainLoop["🔄 Training Loop<br/>VAE Encode → Add Noise<br/>UNet Predict → MSE Loss<br/>Backprop LoRA params"]
+        Validation["✅ Validation<br/>Generate Images<br/>Log Metrics"]
+    end
+
+    subgraph "Output"
+        Checkpoint["💾 Checkpoints<br/>Every 500 steps"]
+        LoRAWeights["💎 Final LoRA Weights<br/>*.safetensors"]
+    end
+
+    Dataset --> DataPrep
+    Config --> BaseModel
+    BaseModel --> LoRA
+    LoRA --> TrainLoop
+    DataPrep --> TrainLoop
+    TrainLoop --> Validation
+    TrainLoop --> Checkpoint
+    Validation --> LoRAWeights
+    Checkpoint --> LoRAWeights
+
+    style Dataset fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
+    style LoRA fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    style TrainLoop fill:#e8f5e9,stroke:#388e3c,stroke-width:3px
+    style LoRAWeights fill:#fff9c4,stroke:#f57f17,stroke-width:3px
+```
+
+**Key Features:**
+- **Parameter-Efficient**: Only trains LoRA adapters (~1-5% of model params)
+- **Mixed Precision**: FP16/BF16 for memory efficiency
+- **Distributed Training**: Multi-GPU support via Accelerate
+- **Flexible**: Custom datasets, hyperparameters, validation prompts
+
+**Quick Start:**
+```bash
+python train_text_to_image_lora_sdxl.py \
+  --pretrained_model_name_or_path="stabilityai/stable-diffusion-xl-base-1.0" \
+  --train_data_dir="./data/training" \
+  --output_dir="./output/lora-model" \
+  --resolution=1024 \
+  --train_batch_size=4 \
+  --learning_rate=1e-4 \
+  --rank=8 \
+  --mixed_precision="fp16"
+```
+
 ## ⚙️ Components
 
 ### Backend
@@ -198,3 +260,4 @@ Once the application is running:
 
 1. Access the frontend at: http://localhost:8080
 2. The backend API is available at: http://localhost:8000
+
