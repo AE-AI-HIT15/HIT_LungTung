@@ -250,6 +250,7 @@ python train_text_to_image_lora_sdxl.py \
 ├── .dockerignore                   # Docker ignore file
 ├── docker-compose.yml              # Docker Compose config for orchestrating services
 ├── pyproject.toml                  # Python project configuration file
+├── train_text_to_image_lora_sdxl.py# SDXL LoRA training script for model fine-tuning
 └── README.md                       # Project documentation
 
 ```
@@ -260,4 +261,5 @@ Once the application is running:
 
 1. Access the frontend at: http://localhost:8080
 2. The backend API is available at: http://localhost:8000
+
 
