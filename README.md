@@ -240,7 +240,7 @@ accelerate launch train_text_to_image_lora_sdxl.py \
    ```
 3. Setup Model Files
 - Create a folder named `weights` inside the folder: backend\shared
-- Download the model file from this Google Drive link: https://drive.google.com/file/d/1xrItYfDMEhbO3C2FTOrXF6e0nVHQleLc/view?usp=drive_link
+- Download the model file from this Google Drive link: https://drive.google.com/file/d/1T4kiLfLp6Wq7R5qJfGknKYp4AUSiZAxs/view?usp=drive_link
 
 3. Start the application using docker compose:
     ```
